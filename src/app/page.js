@@ -5,10 +5,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import toast from 'react-hot-toast';
+import { Button, Card as UIListingCard, FilterButton } from '@/ui';
 
 import { logout as logoutAction } from '@/lib/slices/authSlice';
 import { getErrorMessage } from '@/lib/api/errorUtils';
-import { useGetSitesQuery } from '@/lib/api/sitesApi';
+import { useGetSitesQuery, useGetCategoriesQuery } from '@/lib/api/sitesApi';
 
 
 const Container = styled.div`
@@ -58,28 +59,7 @@ const HeaderButtons = styled.div`
   gap: 1rem;
 `;
 
-const Button = styled.button`
-  padding: 0.625rem 1.25rem;
-  background: ${(props) =>
-    props.primary ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent'};
-  color: ${(props) => (props.primary ? 'white' : '#667eea')};
-  border: ${(props) => (props.primary ? 'none' : '2px solid #667eea')};
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-  }
-`;
+// Use reusable Button from `src/ui` for consistent styling across the app.
 
 const Hero = styled.div`
   max-width: 1400px;
@@ -132,31 +112,6 @@ const Filters = styled.div`
   justify-content: center;
 `;
 
-const FilterButton = styled.button`
-  padding: 0.625rem 1.25rem;
-  background: ${(props) => (props.active ? 'white' : 'rgba(255, 255, 255, 0.2)')};
-  color: ${(props) => (props.active ? '#667eea' : 'white')};
-  border: 2px solid ${(props) => (props.active ? 'white' : 'rgba(255, 255, 255, 0.3)')};
-  border-radius: 25px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  backdrop-filter: blur(10px);
-
-  &:hover {
-    background: white;
-    color: #667eea;
-    border-color: white;
-    transform: translateY(-2px);
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-  }
-`;
-
 const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -169,86 +124,7 @@ const Grid = styled.div`
   }
 `;
 
-const Card = styled.a`
-  background: white;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s;
-  cursor: pointer;
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-
-  &:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-  }
-`;
-
-const CardImage = styled.div`
-  width: 100%;
-  height: 200px;
-  background: ${(props) =>
-    props.src
-      ? `url(${props.src}) center/cover`
-      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'};
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: ${(props) => (props.src ? 'rgba(0, 0, 0, 0.1)' : 'transparent')};
-  }
-`;
-
-const CardImagePlaceholder = styled.div`
-  font-size: 3rem;
-  color: white;
-  z-index: 1;
-`;
-
-const CardContent = styled.div`
-  padding: 1.5rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-`;
-
-const CardCategory = styled.span`
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  width: fit-content;
-  margin-bottom: 0.75rem;
-`;
-
-const CardTitle = styled.h3`
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a202c;
-  margin-bottom: 0.75rem;
-`;
-
-const CardDescription = styled.p`
-  font-size: 0.95rem;
-  color: #718096;
-  line-height: 1.6;
-  flex: 1;
-`;
+// Use reusable `UIListingCard` molecule for listing cards
 
 const LoadingState = styled.div`
   display: flex;
@@ -286,11 +162,19 @@ const ErrorState = styled.div`
   max-width: 600px;
 `;
 
-const CATEGORIES = ['Technology', 'Design', 'News', 'Education', 'Entertainment', 'Business', 'Health', 'Other'];
+// categories will be loaded from API
 
 export default function Home() {
-  // Fetch sites from API; fallback to empty list
-  const { data: sitesData, isLoading: sitesLoadingApi, error: sitesErrorApi } = useGetSitesQuery();
+  // selectedCategoryId holds the category id from API; empty means no filter
+  const [selectedCategory, setSelectedCategory] = useState('');
+
+  // Fetch categories from API
+  const { data: categoriesData } = useGetCategoriesQuery();
+  const categories = categoriesData?.results || categoriesData || [];
+
+  // Pass category id as query param when selected
+  const sitesQueryParams = selectedCategory ? { category: selectedCategory } : undefined;
+  const { data: sitesData, isLoading: sitesLoadingApi, error: sitesErrorApi } = useGetSitesQuery(sitesQueryParams);
   const sites = sitesData?.results || sitesData || [];
   const dispatch = useDispatch();
   const router = useRouter();
@@ -299,10 +183,8 @@ export default function Home() {
   
   
 
-  const [selectedCategory, setSelectedCategory] = useState('');
-
   useEffect(() => {
-   
+    // placeholder: we might add more init logic later
   }, [dispatch]);
 
   const handleLogin = () => {
@@ -320,9 +202,8 @@ export default function Home() {
     router.push('/admin/dashboard');
   };
 
-  const filteredSites = selectedCategory
-    ? sites.filter((site) => site.category === selectedCategory)
-    : sites;
+  // sites returned from API will already be filtered when a category id is provided
+  const filteredSites = sites;
 
   const getCategoryIcon = (category) => {
     const icons = {
@@ -336,6 +217,19 @@ export default function Home() {
       Other: '🔗',
     };
     return icons[category] || '🔗';
+  };
+  const getCategoryLabel = (site) => {
+    if (!site) return '';
+    if (site.categoryName) return site.categoryName;
+    // If category is an object
+    if (site.category && typeof site.category === 'object') return site.category.name || site.category.title || '';
+    // If category is a string, it might be an id — try to resolve from categories
+    if (site.category && typeof site.category === 'string') {
+      const found = categories.find((c) => (c.id === site.category) || (c._id === site.category) || (c.id === String(site.category)));
+      if (found) return found.name || found.title || String(found);
+      return site.category;
+    }
+    return '';
   };
 const isLoading = sitesLoadingApi;
 const error = sitesErrorApi ? getErrorMessage(sitesErrorApi) : null;
@@ -369,15 +263,19 @@ const error = sitesErrorApi ? getErrorMessage(sitesErrorApi) : null;
           <FilterButton active={selectedCategory === ''} onClick={() => setSelectedCategory('')}>
             All
           </FilterButton>
-          {CATEGORIES.map((category) => (
-            <FilterButton
-              key={category}
-              active={selectedCategory === category}
-              onClick={() => setSelectedCategory(category)}
-            >
-              {category}
-            </FilterButton>
-          ))}
+          {categories.map((cat) => {
+            const id = cat.id || cat._id || cat._t || cat._key;
+            const name = cat.name || cat.title || cat.label || cat;
+            return (
+              <FilterButton
+                key={id || name}
+                active={selectedCategory === id}
+                onClick={() => setSelectedCategory(id)}
+              >
+                {name}
+              </FilterButton>
+            );
+          })}
         </Filters>
 
         {isLoading ? (
@@ -392,20 +290,19 @@ const error = sitesErrorApi ? getErrorMessage(sitesErrorApi) : null;
         ) : (
           <Grid>
             {filteredSites.map((site) => {
-              const cover = site.cover_image || site.coverImage || 'https://via.placeholder.com/800x400?text=No+Image';
+              const cover = site.cover_image || site.coverImage || null;
               const url = site.siteUrl || site.site_url || '#';
               return (
-                <Card key={site.id} href={url} target="_blank" rel="noopener noreferrer">
-                  <CardImage src={cover}>
-                    {!cover && <CardImagePlaceholder>{getCategoryIcon(site.category)}</CardImagePlaceholder>}
-                  </CardImage>
-                  <CardContent>
-                    <CardCategory>{site.category}</CardCategory>
-                    <CardTitle>{site.title || site.name}</CardTitle>
-                    <CardDescription>{site.description}</CardDescription>
-                  </CardContent>
-                </Card>
-              )
+                <UIListingCard
+                  key={site.id || site._id}
+                  href={url}
+                  cover={cover}
+                  icon={getCategoryIcon(getCategoryLabel(site))}
+                  category={getCategoryLabel(site)}
+                  title={site.title || site.name}
+                  description={site.description}
+                />
+              );
             })}
           </Grid>
         )}

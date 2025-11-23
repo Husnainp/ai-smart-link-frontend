@@ -30,7 +30,8 @@ export const sitesApi = baseApi.injectEndpoints({
       invalidatesTags: ['Site'],
     }),
     getCategories: builder.query({
-      query: () => ({ url: '/sites/categories' }),
+      // categories endpoint is served at /api/categories
+      query: () => ({ url: '/categories' }),
     }),
   }),
   overrideExisting: false,

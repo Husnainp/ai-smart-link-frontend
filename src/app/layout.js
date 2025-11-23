@@ -1,8 +1,8 @@
 
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ReduxProvider from "../components/ReduxProvider";
-import StyledComponentsRegistry from "../components/StyledComponentsRegistry";
+import ReduxProvider from "../ui/ReduxProvider";
+import StyledComponentsRegistry from "../ui/StyledComponentsRegistry";
 import { Toaster } from "react-hot-toast"
 const geistSans = Geist({
   variable: "--font-geist-sans",
