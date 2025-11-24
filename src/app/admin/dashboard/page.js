@@ -43,83 +43,119 @@ import { useGenerateDescriptionMutation } from '@/lib/api/aiApi';
 import { getErrorMessage } from '@/lib/api/errorUtils';
 import { logout as logoutAction } from '@/lib/slices/authSlice';
 
-// Zod schema (works in JS!)
+// Zod schema
 const siteSchema = z.object({
   site_url: z.string().url('Must be a valid URL').min(1, 'URL is required'),
   title: z.string().min(3, 'Title must be at least 3 characters').max(100),
-  // allow either an existing URL (string) or a File/FileList when uploading
   cover_image: z.any().optional(),
   description: z.string().min(10, 'Description too short').max(500),
   category: z.string().min(1, 'Please select a category'),
 });
 
-// Styled Components (same as yours - keeping all)
+// Responsive Styled Components
 const Container = styled.div`
   min-height: 100vh;
   background: #f7fafc;
 `;
 
-// ... (Keep ALL your existing styled components exactly as they were)
-// I'm including only the essential ones for brevity, but copy-paste your full list
-
 const Header = styled.header`
   background: white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 1rem 2rem;
+  padding: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    padding: 1rem 2rem;
+  }
 `;
 
 const Logo = styled.h1`
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #667eea;
+
+  @media (min-width: 768px) {
+    font-size: 1.5rem;
+  }
+`;
+
+const HeaderRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+
+  @media (min-width: 768px) {
+    gap: 1rem;
+    font-size: 1rem;
+  }
 `;
 
 const LogoutButton = styled.button`
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
   background: #e53e3e;
   color: white;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  &:hover { background: #c53030; }
+  font-size: 0.875rem;
+  white-space: nowrap;
+
+  &:hover { 
+    background: #c53030; 
+  }
+
+  @media (min-width: 768px) {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+  }
 `;
 
 const Main = styled.main`
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
 `;
 
 const Section = styled.section`
   background: white;
   border-radius: 12px;
-  padding: 2rem;
-  margin-bottom: 2rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #1a202c;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+
+  @media (min-width: 768px) {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
 `;
 
-// Reusable UI primitives (imported from `src/ui`)
-// `Form`, `FormGroup`, `ButtonGroup`, `Label`, `Input`, `Select`, `Textarea`, `Modal`,
-// `ModalContent`, `CloseButton`, `Table`, `Thead`, `Th`, `Tbody`, `Tr`, `Td`, `ActionButton`, `Tag`, `Pagination`.
-
-// Keep a couple of small page-specific utilities here.
 const ErrorMessage = styled.div`
   color: #c53030;
   font-size: 0.875rem;
   margin-top: 0.25rem;
 `;
 
-// Confirm modal styles reused for layout
 const ConfirmBody = styled.div`
   padding: 1rem 0;
   color: #2d3748;
@@ -130,12 +166,185 @@ const ConfirmActions = styled.div`
   gap: 0.75rem;
   justify-content: flex-end;
   margin-top: 1rem;
+  flex-wrap: wrap;
+`;
+
+// Responsive filters container
+const FiltersContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+  }
+`;
+
+const FilterGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  label {
+    font-weight: 700;
+    color: #4a5568;
+    white-space: nowrap;
+  }
+
+  input, select {
+    width: 100%;
+    min-width: 0;
+
+    @media (min-width: 768px) {
+      min-width: 200px;
+    }
+  }
+`;
+
+// Responsive pagination
+const PaginationContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+`;
+
+const PaginationInfo = styled.div`
+  color: #4a5568;
+  font-size: 0.875rem;
+  text-align: center;
+
+  @media (min-width: 768px) {
+    font-size: 1rem;
+    text-align: left;
+  }
+`;
+
+const PaginationButtons = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+
+  @media (min-width: 768px) {
+    justify-content: flex-end;
+  }
+`;
+
+// Responsive table wrapper with horizontal scroll
+const TableWrapper = styled.div`
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+
+  /* Hide scrollbar for cleaner look on mobile */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f7fafc;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+  }
+`;
+
+// Card layout for mobile (alternative to table)
+const CardGrid = styled.div`
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: 1024px) {
+    display: none; /* Hide cards on desktop, show table instead */
+  }
+`;
+
+const Card = styled.div`
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+`;
+
+const CardTitle = styled.div`
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+`;
+
+const CardDescription = styled.div`
+  color: #718096;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+`;
+
+const CardMeta = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  align-items: center;
+`;
+
+const CardUrl = styled.a`
+  color: #667eea;
+  font-size: 0.875rem;
+  text-decoration: none;
+  word-break: break-all;
+  display: block;
+  margin-bottom: 0.75rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const CardActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+`;
+
+// Desktop table (hidden on mobile)
+const DesktopTableWrapper = styled.div`
+  display: none;
+
+  @media (min-width: 1024px) {
+    display: block;
+  }
 `;
 
 export default function AdminDashboard() {
   const dispatch = useDispatch();
   const router = useRouter();
-  // const { user, isAuthenticated } = useSelector(state => state.auth);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -149,9 +358,6 @@ export default function AdminDashboard() {
   const [sort, setSort] = useState('-created_at');
   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
 
-  // RTK Query hooks
-  // request sites from server; include q (search), category, pagination and sort
-  // debounce searchQuery to avoid firing API on every keystroke
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
     return () => clearTimeout(t);
@@ -166,6 +372,7 @@ export default function AdminDashboard() {
     if (sort) p.sort = sort;
     return Object.keys(p).length ? p : undefined;
   })();
+
   const {
     data: sites = [],
     isLoading: sitesLoading,
@@ -206,16 +413,13 @@ export default function AdminDashboard() {
   const watchedCover = watch('cover_image');
 
   const defaultCategories = ['Technology', 'Design', 'News', 'Education', 'Entertainment', 'Business', 'Health', 'Other'];
-  // Normalize categories into { id, name } objects so select values are consistent
   const CATEGORIES = (categories && categories.length > 0)
     ? categories.map((c) => ({ id: c.id || c._id || c._key || String(c.id || c._id || c._key), name: c.name || c.title || c.label || String(c) }))
     : defaultCategories.map((n) => ({ id: n, name: n }));
 
   const onSubmit = async (data) => {
     try {
-      // handle cover image upload if a File was provided
       let coverValue = data.cover_image;
-      // react-hook-form returns FileList for file inputs
       if (data.cover_image && data.cover_image instanceof FileList && data.cover_image.length > 0) {
         const file = data.cover_image[0];
         const uploaded = await s3Uploader(file, setCoverUploading);
@@ -226,7 +430,6 @@ export default function AdminDashboard() {
         coverValue = uploaded;
       }
 
-      // ensure category is passed as id (string)
       const payload = { ...data, category: String(data.category), cover_image: coverValue };
       if (editingId) {
         await updateSite({ id: editingId, data: payload }).unwrap();
@@ -234,18 +437,13 @@ export default function AdminDashboard() {
         await createSite(payload).unwrap();
       }
 
-      // Reset filters/pagination so the newly created/updated site is visible
       try {
         setSearchQuery('');
         setCategoryFilter('');
         setPage(1);
-      } catch (e) {
-        // ignore if state setters aren't available in some contexts
-      }
+      } catch (e) {}
 
-      // Force refetch to ensure UI shows latest data
       if (typeof refetch === 'function') refetch();
-
       closeModal();
     } catch (err) {
       const message = getErrorMessage(err?.data || err || null);
@@ -256,7 +454,6 @@ export default function AdminDashboard() {
 
   const handleEdit = (site) => {
     setEditingId(site._id);
-    // resolve category id from site (could be object, id or name)
     let categoryId = '';
     if (site.category) {
       if (typeof site.category === 'object') {
@@ -275,12 +472,6 @@ export default function AdminDashboard() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
-    // Open confirmation modal instead of immediately deleting
-    setConfirmTarget({ id, title: null });
-    setConfirmOpen(true);
-  };
-
   const handleAddNew = () => {
     setEditingId(null);
     reset({
@@ -293,7 +484,6 @@ export default function AdminDashboard() {
     setShowForm(true);
   };
 
-  // Confirm modal handlers
   const openConfirmDelete = (site) => {
     setConfirmTarget({ id: site._id, title: site.title || site.name || '' });
     setConfirmOpen(true);
@@ -308,7 +498,6 @@ export default function AdminDashboard() {
     if (!confirmTarget.id) return;
     setConfirmLoading(true);
     try {
-      // Try calling delete with id param first; fall back to object shape if necessary
       try {
         await deleteSite(confirmTarget.id).unwrap();
       } catch (firstErr) {
@@ -318,7 +507,6 @@ export default function AdminDashboard() {
       toast.success('Link deleted');
       setConfirmOpen(false);
       setConfirmTarget({ id: null, title: null });
-      // refetch the sites list to ensure UI updates
       if (typeof refetch === 'function') refetch();
     } catch (err) {
       const message = getErrorMessage(err?.data || err || null);
@@ -347,7 +535,6 @@ export default function AdminDashboard() {
     (async () => {
       try {
         const res = await generateDescription({ title, category, site_url }).unwrap();
-        // tolerant extraction of generated text
         const generated = res?.data?.description || res?.description || res?.generatedDescription || res || '';
         if (generated) {
           setValue('description', generated);
@@ -365,13 +552,10 @@ export default function AdminDashboard() {
 
   const getCategoryLabel = (category) => {
     if (!category) return '';
-    // normalize id if category is an object
     const isObject = typeof category === 'object';
     const id = isObject ? (category.id || category._id || category._key || '') : String(category);
-    // try to find by id or by name
     const found = CATEGORIES.find(c => String(c.id) === id || c.name === category || c.id === category);
     if (found) return found.name;
-    // fallback to provided object's name if available
     if (isObject) return category.name || category.title || '';
     return String(category || '');
   };
@@ -382,24 +566,18 @@ export default function AdminDashboard() {
     return matchesSearch;
   });
 
-  // if (!isAuthenticated) {
-  //   router.push('/login');
-  //   return null;
-  // }
-
   return (
     <Container>
       <Header>
         <Logo>Smart Link Admin</Logo>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span>Welcome, { 'Admin'}</span>
+        <HeaderRight>
+          <span>Welcome, Admin</span>
           <LogoutButton onClick={() => { dispatch(logoutAction()); router.push('/login'); }}>
             Logout
           </LogoutButton>
-        </div>
+        </HeaderRight>
       </Header>
 
-      {/* Modal Form */}
       {showForm && (
         <Modal onClick={closeModal}>
           <ModalContent onClick={e => e.stopPropagation()}>
@@ -423,7 +601,6 @@ export default function AdminDashboard() {
                 <Label>Cover Image (optional)</Label>
                 <Input type="file" accept="image/*" {...register('cover_image')} />
                 {errors.cover_image && <ErrorMessage>{errors.cover_image.message}</ErrorMessage>}
-                {/* Preview: show selected file preview or existing URL preview */}
                 {watchedCover && (typeof watchedCover === 'string' ? (
                   <div style={{ marginTop: 8 }}>
                     <img src={watchedCover} alt="cover" style={{ maxWidth: 240, borderRadius: 8 }} />
@@ -454,8 +631,8 @@ export default function AdminDashboard() {
 
               <ButtonGroup>
                 <Button type="button" variant="ai" onClick={handleAIGenerate}>
-                    Ask AI for Description
-                  </Button>
+                  Ask AI for Description
+                </Button>
                 <Button type="submit" disabled={isSubmitting || creating || updating || coverUploading}>
                   {editingId ? 'Update' : 'Add'} Link
                 </Button>
@@ -472,91 +649,115 @@ export default function AdminDashboard() {
         <Section>
           <SectionTitle>Manage Links ({sitesList.length})</SectionTitle>
 
-          <Button onClick={handleAddNew} style={{ marginBottom: '1.5rem' }}>
+          <Button onClick={handleAddNew} style={{ marginBottom: '1.5rem', width: '100%' }}>
             + Add New Link
           </Button>
 
-          {/* Filters */}
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <label style={{ fontWeight: 700, color: '#4a5568' }}>Search Title:</label>
+          <FiltersContainer>
+            <FilterGroup>
+              <label>Search:</label>
               <Input
                 type="text"
                 placeholder="Search by title..."
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-                style={{ minWidth: 260 }}
               />
-            </div>
+            </FilterGroup>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <label style={{ fontWeight: 700, color: '#4a5568' }}>Category:</label>
+            <FilterGroup>
+              <label>Category:</label>
               <Select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}>
                 <option value="">All Categories</option>
                 {CATEGORIES.map(cat => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </Select>
-            </div>
-          </div>
+            </FilterGroup>
+          </FiltersContainer>
 
           {sitesLoading ? (
             <p>Loading links...</p>
           ) : filteredSites.length === 0 ? (
             <p>No links found.</p>
           ) : (
-            <div>
-              {/* Your Table component here with filteredSites.map(...) */}
-              <Table>
-                <Thead>
-                  <Tr>
-                    <Th>Title</Th>
-                    <Th>Category</Th>
-                    <Th>URL</Th>
-                    <Th style={{ width: '220px', textAlign: 'center' }}>Actions</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {filteredSites.map(site => (
-                    <Tr key={site._id || site.id}>
-                      <Td>
-                        <div style={{ fontWeight: 700 }}>{site.title || site.name}</div>
-                        <div style={{ color: '#718096', fontSize: '0.85rem' }}>{site.description?.slice(0, 120) || ''}</div>
-                      </Td>
-                      <Td>
-                        <Tag>{getCategoryLabel(site.category)}</Tag>
-                      </Td>
-                      <Td>
-                        <a href={site.site_url || site.site_url} target="_blank" rel="noreferrer">{site.site_url || site.site_url}</a>
-                      </Td>
-                      <Td style={{ textAlign: 'center' }}>
-                        <ActionButton onClick={() => handleEdit(site)}>Edit</ActionButton>
+            <>
+              {/* Mobile Card View */}
+              <CardGrid>
+                {filteredSites.map(site => (
+                  <Card key={site._id || site.id}>
+                    <CardTitle>{site.title || site.name}</CardTitle>
+                    <CardDescription>
+                      {site.description?.slice(0, 120) || ''}
+                    </CardDescription>
+                    <CardMeta>
+                      <Tag>{getCategoryLabel(site.category)}</Tag>
+                    </CardMeta>
+                    <CardUrl href={site.site_url || site.site_url} target="_blank" rel="noreferrer">
+                      {site.site_url || site.site_url}
+                    </CardUrl>
+                    <CardActions>
+                      <ActionButton onClick={() => handleEdit(site)}>Edit</ActionButton>
+                      <ActionButton danger onClick={() => openConfirmDelete(site)}>Delete</ActionButton>
+                    </CardActions>
+                  </Card>
+                ))}
+              </CardGrid>
 
-                        <ActionButton danger onClick={() => openConfirmDelete(site)}>Delete</ActionButton>
-                      </Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              </Table>
-              {/* Pagination controls */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-                <div style={{ color: '#4a5568' }}>
-                  Showing page {pagination.page} of {pagination.totalPages} — {pagination.total} total
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+              {/* Desktop Table View */}
+              <DesktopTableWrapper>
+                <TableWrapper>
+                  <Table>
+                    <Thead>
+                      <Tr>
+                        <Th>Title</Th>
+                        <Th>Category</Th>
+                        <Th>URL</Th>
+                        <Th style={{ width: '220px', textAlign: 'center' }}>Actions</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {filteredSites.map(site => (
+                        <Tr key={site._id || site.id}>
+                          <Td>
+                            <div style={{ fontWeight: 700 }}>{site.title || site.name}</div>
+                            <div style={{ color: '#718096', fontSize: '0.85rem' }}>{site.description?.slice(0, 120) || ''}</div>
+                          </Td>
+                          <Td>
+                            <Tag>{getCategoryLabel(site.category)}</Tag>
+                          </Td>
+                          <Td>
+                            <a href={site.site_url || site.site_url} target="_blank" rel="noreferrer">{site.site_url || site.site_url}</a>
+                          </Td>
+                          <Td style={{ textAlign: 'center' }}>
+                            <ActionButton onClick={() => handleEdit(site)}>Edit</ActionButton>
+                            <ActionButton danger onClick={() => openConfirmDelete(site)}>Delete</ActionButton>
+                          </Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </TableWrapper>
+              </DesktopTableWrapper>
+
+              {/* Pagination */}
+              <PaginationContainer>
+                <PaginationInfo>
+                  Page {pagination.page} of {pagination.totalPages} — {pagination.total} total
+                </PaginationInfo>
+                <PaginationButtons>
                   <Button type="button" secondary disabled={pagination.page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
                     Prev
                   </Button>
                   <Button type="button" disabled={pagination.page >= pagination.totalPages} onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}>
                     Next
                   </Button>
-                </div>
-              </div>
-            </div>
+                </PaginationButtons>
+              </PaginationContainer>
+            </>
           )}
         </Section>
       </Main>
-      {/* Confirm Delete Modal */}
+
       {confirmOpen && (
         <Modal onClick={cancelConfirm}>
           <ModalContent onClick={(e) => e.stopPropagation()}>
